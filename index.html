@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediTrust - Aurora Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode"></script> 
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+
+        :root {
+            --primary: #6366f1;
+            --secondary: #06b6d4;
+            --accent: #8b5cf6;
+            --success: #10b981;
+            --glass: rgba(255, 255, 255, 0.7);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #f1f5f9;
+            overflow: hidden;
+        }
+
+        .liquid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            filter: blur(80px);
+        }
+
+        .blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            opacity: 0.45;
+            animation: float 20s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
+        }
+
+        .blob-1 { background: var(--primary); top: -10%; left: -10%; }
+        .blob-2 { background: var(--secondary); bottom: -10%; right: -10%; animation-delay: -5s; }
+        .blob-3 { background: var(--accent); top: 40%; left: 30%; animation-delay: -10s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+            100% { transform: translate(100px, 50px) scale(1.2) rotate(90deg); }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+        }
+
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.15);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up { animation: slideUp 0.6s ease-out forwards; }
+
+        .scanner-window {
+            width: 280px;
+            height: 280px;
+            border-radius: 40px;
+            overflow: hidden;
+            border: 4px solid white;
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        #reader video {
+            object-fit: cover !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        @keyframes scan-line {
+            0% { transform: translateY(-140px); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(140px); opacity: 0; }
+        }
+        .scanner-line {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--secondary), transparent);
+            box-shadow: 0 0 15px var(--secondary);
+            top: 50%;
+            z-index: 10;
+            animation: scan-line 2.5s linear infinite;
+        }
+
+        ::-webkit-scrollbar { display: none; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .faq-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .faq-content.open { max-height: 250px; }
+        
+        .app-container {
+            width: 100%;
+            max-width: 414px;
+            height: 850px;
+            position: relative;
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex justify-center items-center p-4">
+
+    <div class="liquid-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-container glass-card flex flex-col relative sm:rounded-[48px] overflow-hidden border border-white/60">
+
+        <div class="px-7 pt-9 pb-5 flex justify-between items-center z-20 relative shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-br from-indigo-500 to-cyan-500 p-2.5 rounded-2xl shadow-lg shadow-indigo-200">
+                    <i class="fas fa-shield-virus text-xl text-white"></i>
+                </div>
+                <span class="font-extrabold text-2xl tracking-tighter text-slate-800">MediTrust</span>
+            </div>
+            <button onclick="switchScreen('home')" class="w-11 h-11 glass-btn rounded-2xl flex items-center justify-center text-slate-500">
+                <i class="fas fa-bars-staggered"></i>
+            </button>
+        </div>
+
+        <div id="screen-home" class="app-screen active flex-1 p-7 flex flex-col overflow-y-auto relative z-10 w-full h-full bg-transparent">
+            <div class="mb-9 animate-slide-up">
+                <h2 class="text-3xl font-black text-slate-900 mb-1 leading-tight tracking-tight">Verify with<br>Confidence.</h2>
+                <p class="text-slate-500 text-sm font-semibold">Decentralized medicine authentication.</p>
+            </div>
+
+            <button onclick="startScanner()" class="relative group w-full bg-gradient-to-br from-indigo-600 via-indigo-500 to-cyan-500 text-white rounded-[40px] p-8 flex justify-between items-center mb-7 shadow-2xl shadow-indigo-200 active:scale-95 transition-all overflow-hidden animate-slide-up" style="animation-delay: 0.1s;">
+                <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                <div class="text-left z-10">
+                    <span class="block font-bold text-[10px] uppercase tracking-[0.3em] mb-2 text-indigo-100/80">Intelligent Scan</span>
+                    <span class="block font-extrabold text-2xl tracking-tight">VERIFY NOW</span>
+                </div>
+                <div class="z-10 w-16 h-16 bg-white/20 backdrop-blur-xl border border-white/40 rounded-3xl flex items-center justify-center shadow-inner">
+                    <i class="fas fa-qrcode text-3xl"></i>
+                </div>
+            </button>
+
+            <div class="mb-9 relative flex items-center glass-btn rounded-3xl p-2 focus-within:ring-4 focus-within:ring-indigo-100 transition-all animate-slide-up" style="animation-delay: 0.2s;">
+                <div class="pl-4 pr-2 text-slate-400"><i class="fas fa-search"></i></div>
+                <input type="text" id="serialInput" placeholder="Enter ID (e.g. 8901000000001)" class="flex-1 py-4 bg-transparent border-none outline-none text-sm font-bold text-slate-800 placeholder-slate-400 w-full" onkeypress="if(event.key === 'Enter') verifySerialNumber()">
+                <button onclick="verifySerialNumber()" class="bg-slate-900 text-white px-7 py-4 rounded-[20px] font-black text-[11px] uppercase tracking-widest transition-all hover:bg-black active:scale-95 shadow-xl">
+                    Check
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-5 mb-9 animate-slide-up" style="animation-delay: 0.3s;">
+                <button onclick="switchScreen('search')" class="glass-btn rounded-[32px] p-7 flex flex-col items-start justify-center gap-4 text-slate-700 group">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-50 flex items-center justify-center border border-cyan-100 transition-colors group-hover:bg-cyan-500 group-hover:text-white">
+                        <i class="fas fa-magnifying-glass text-xl"></i>
+                    </div>
+                    <span class="font-black text-xs tracking-wider uppercase">Database</span>
+                </button>
+                <button onclick="switchScreen('help')" class="glass-btn rounded-[32px] p-7 flex flex-col items-start justify-center gap-4 text-slate-700 group">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center border border-indigo-100 transition-colors group-hover:bg-indigo-500 group-hover:text-white">
+                        <i class="fas fa-headset text-xl"></i>
+                    </div>
+                    <span class="font-black text-xs tracking-wider uppercase">Support</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-scan" class="app-screen hidden flex-1 flex flex-col relative overflow-hidden bg-transparent z-10 w-full h-full">
+            <div class="absolute inset-0 z-0 bg-slate-50/80 backdrop-blur-sm"></div>
+
+            <button onclick="stopScannerAndGoHome()" class="absolute top-8 left-7 z-50 w-12 h-12 glass-btn rounded-2xl flex items-center justify-center text-slate-800 shadow-xl border-white">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            
+            <div class="flex-1 flex flex-col items-center justify-center z-10 w-full h-full relative">
+                <div class="scanner-window glass-card flex items-center justify-center relative">
+                    <div id="reader" class="w-full h-full bg-slate-200"></div>
+                    <div class="scanner-line"></div>
+                    <div class="absolute top-5 left-5 w-8 h-8 border-t-4 border-l-4 border-cyan-400 rounded-tl-xl z-20"></div>
+                    <div class="absolute top-5 right-5 w-8 h-8 border-t-4 border-r-4 border-cyan-400 rounded-tr-xl z-20"></div>
+                    <div class="absolute bottom-5 left-5 w-8 h-8 border-b-4 border-l-4 border-cyan-400 rounded-bl-xl z-20"></div>
+                    <div class="absolute bottom-5 right-5 w-8 h-8 border-b-4 border-r-4 border-cyan-400 rounded-br-xl z-20"></div>
+                </div>
+
+                <div class="mt-10 px-8 text-center w-full animate-slide-up">
+                    <h2 class="text-2xl font-black text-slate-900 tracking-tight mb-2">Focus on QR Code</h2>
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-10">Confining Scan to Secure Zone</p>
+                    
+                    <div class="flex flex-col gap-4 items-center">
+                        <button onclick="document.getElementById('qr-input-file').click()" class="w-full max-w-[260px] glass-btn py-4.5 rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center gap-3 active:scale-95 text-indigo-600 border-white">
+                            <i class="fas fa-images"></i> Select from Library
+                        </button>
+                        <input type="file" id="qr-input-file" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-search" class="app-screen hidden flex-1 flex flex-col overflow-y-auto bg-transparent z-10 w-full h-full">
+            <div class="bg-gradient-to-br from-cyan-500 to-indigo-600 p-8 pb-14 rounded-b-[48px] shadow-2xl shadow-cyan-100 relative shrink-0">
+                <button onclick="switchScreen('home')" class="w-11 h-11 glass-btn bg-white/20 border-white/40 rounded-2xl flex items-center justify-center text-white mb-8 shadow-xl">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="flex items-center gap-6">
+                    <div class="w-20 h-20 bg-white/20 backdrop-blur-2xl border border-white/40 rounded-[28px] flex items-center justify-center text-white shadow-inner">
+                        <i class="fas fa-database text-4xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-white tracking-tighter leading-none">DATABASE</h2>
+                        <p class="text-cyan-100/60 font-bold text-[10px] uppercase tracking-[0.3em] mt-3">Global Registry</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 p-7 -mt-10 relative z-10">
+                <div class="relative mb-9 shadow-2xl shadow-indigo-100/30">
+                    <i class="fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" onkeyup="filterMedicines()" placeholder="Search directory..." class="w-full pl-15 pr-7 py-5.5 rounded-[28px] glass-card text-slate-900 border-white focus:ring-4 focus:ring-indigo-100 outline-none text-sm font-bold placeholder-slate-400">
+                </div>
+
+                <div class="space-y-3 pb-24" id="medicineList">
+                    </div>
+            </div>
+        </div>
+
+        <div id="screen-help" class="app-screen hidden flex-1 flex flex-col overflow-y-auto bg-transparent z-10 w-full h-full">
+            <div class="p-8 pb-12 text-center relative">
+                <button onclick="switchScreen('home')" class="absolute top-9 left-7 w-11 h-11 glass-btn border-white/60 rounded-2xl flex items-center justify-center text-slate-500">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="flex flex-col items-center justify-center mt-10 animate-slide-up">
+                    <div class="w-24 h-24 bg-indigo-50 border border-indigo-100 rounded-[36px] flex items-center justify-center mb-5 shadow-inner">
+                        <i class="fas fa-headset text-4xl text-indigo-500"></i>
+                    </div>
+                    <h2 class="text-3xl font-black text-slate-900 tracking-tighter">SUPPORT</h2>
+                    <p class="text-slate-400 text-[10px] font-black tracking-[0.2em] mt-2">ASSISTANCE 24/7</p>
+                </div>
+            </div>
+
+            <div class="px-7 pb-14">
+                <div class="space-y-4 mb-12">
+                    <div class="glass-card rounded-[32px] overflow-hidden border-white">
+                        <button onclick="toggleFaq('faq1')" class="w-full p-6 text-left font-black text-slate-800 text-sm flex justify-between items-center bg-white/40">
+                            Verification flow <i class="fas fa-chevron-down text-slate-400 text-[10px] transition-transform" id="icon-faq1"></i>
+                        </button>
+                        <div id="faq1" class="faq-content bg-white/20 px-7 text-sm text-slate-500 font-semibold leading-relaxed">
+                            <p class="pb-7">Simply point the scanner window at a medicine QR code. Our blockchain node will instantly cross-reference the hash against the factory ledger.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-5">
+                    <button class="flex-1 glass-btn py-5 rounded-[24px] font-black text-[11px] uppercase tracking-widest text-slate-700 flex items-center justify-center gap-3 border-white/60">
+                        <i class="fas fa-phone-alt text-cyan-500"></i> Voice
+                    </button>
+                    <button class="flex-1 bg-slate-900 py-5 rounded-[24px] font-black text-[11px] uppercase tracking-widest text-white flex items-center justify-center gap-3 shadow-2xl active:scale-95">
+                        <i class="fas fa-envelope text-indigo-400"></i> Write
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-results" class="app-screen hidden flex-1 p-7 flex flex-col overflow-y-auto bg-transparent z-10 w-full h-full">
+            <button onclick="switchScreen('home')" class="w-fit px-6 py-3 glass-btn border-white rounded-2xl text-slate-700 font-black text-[10px] flex items-center gap-3 mb-10 uppercase tracking-widest">
+                <i class="fas fa-arrow-left text-[9px]"></i> Return
+            </button>
+            <div id="results-content" class="pb-24"></div>
+        </div>
+
+        <div id="chat-window" class="hidden absolute bottom-32 right-7 w-[88%] max-w-[350px] glass-card border-white rounded-[40px] shadow-2xl flex flex-col z-50 overflow-hidden" style="height: 500px;">
+            <div class="bg-gradient-to-r from-indigo-500 to-cyan-500 p-6 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <div class="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center text-white shadow-inner"><i class="fas fa-robot text-xl"></i></div>
+                    <div>
+                        <span class="font-black text-white block text-sm tracking-tight">MEDBOT</span>
+                        <span class="text-[9px] text-cyan-100 font-black uppercase tracking-widest">Active Intelligence</span>
+                    </div>
+                </div>
+                <button onclick="toggleChat()" class="text-white/70 hover:text-white"><i class="fas fa-times text-lg"></i></button>
+            </div>
+
+            <div id="chat-messages" class="flex-1 p-6 overflow-y-auto flex flex-col gap-5 bg-white/30 backdrop-blur-md">
+                <div class="self-start glass-btn bg-white/80 border-white text-slate-700 px-5 py-4 rounded-[28px] rounded-tl-sm text-xs leading-relaxed max-w-[85%] font-bold shadow-sm">
+                    Hello! I'm MedBot. How can I assist you with blockchain medicine verification?
+                </div>
+            </div>
+
+            <div class="p-5 bg-white/50 backdrop-blur-xl border-t border-white flex gap-3">
+                <input type="text" id="chat-input" onkeypress="handleChatEnter(event)" class="flex-1 bg-white/60 text-slate-900 px-6 py-4 rounded-[24px] text-xs border border-white focus:outline-none focus:ring-4 focus:ring-indigo-100 placeholder-slate-400 font-bold" placeholder="Query anything...">
+                <button onclick="sendChatMessage()" class="w-14 h-14 bg-indigo-500 text-white rounded-[24px] flex items-center justify-center shadow-xl active:scale-95 transition-all">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <button onclick="toggleChat()" class="absolute bottom-28 right-10 w-16 h-16 bg-gradient-to-br from-indigo-500 to-cyan-500 hover:scale-110 active:scale-90 rounded-[24px] shadow-2xl shadow-indigo-200 flex items-center justify-center z-40 transition-all border border-white/60">
+            <i class="fas fa-comment-dots text-white text-2xl"></i>
+            <div class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full animate-bounce"></div>
+        </button>
+
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 w-[85%] z-[110]">
+            <div class="glass-card rounded-[50px] p-2 flex justify-around items-center">
+                <button onclick="switchScreen('home')" class="nav-item active w-14 h-14 flex items-center justify-center text-2xl text-slate-300" id="tab-home"><i class="fas fa-laptop-medical"></i></button>
+                <button onclick="switchScreen('search')" class="nav-item w-14 h-14 flex items-center justify-center text-2xl text-slate-300" id="tab-search"><i class="fas fa-magnifying-glass-chart"></i></button>
+                <button onclick="toggleChat()" class="nav-item w-14 h-14 flex items-center justify-center text-2xl text-slate-300"><i class="fas fa-stethoscope"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let navigationStack = ['home'];
+        
+        function switchScreen(screenName, skipStack = false) {
+            document.querySelectorAll('.app-screen').forEach(s => s.classList.add('hidden'));
+            if (!skipStack && screenName !== navigationStack[navigationStack.length-1]) navigationStack.push(screenName);
+            
+            document.getElementById(`screen-${screenName}`).classList.remove('hidden');
+
+            const backBtn = document.getElementById('global-back-btn');
+            if (navigationStack.length > 1 && backBtn) { backBtn.classList.remove('opacity-0', 'pointer-events-none'); } 
+            else if (backBtn) { backBtn.classList.add('opacity-0', 'pointer-events-none'); }
+
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'text-indigo-500'));
+            const activeTab = document.getElementById(`tab-${screenName}`);
+            if (activeTab) { activeTab.classList.add('active'); activeTab.classList.remove('text-slate-300'); activeTab.classList.add('text-indigo-500'); }
+
+            if (screenName === 'search') loadAllMedicines();
+            if (html5QrCode && screenName !== 'scan') html5QrCode.stop().catch(()=>{});
+        }
+
+        function goBack() {
+            if (navigationStack.length > 1) {
+                navigationStack.pop();
+                switchScreen(navigationStack[navigationStack.length - 1], true);
+            }
+        }
+
+        let html5QrCode;
+        function startScanner() {
+            switchScreen('scan');
+            if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: { width: 250, height: 250 } }, 
+            (text) => { html5QrCode.stop().then(() => simulateScan(text)); }, () => {}).catch(() => {});
+        }
+
+        function stopScannerAndGoHome() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => { switchScreen('home'); }).catch(() => { switchScreen('home'); });
+            } else { switchScreen('home'); }
+        }
+
+        async function scanFromGallery(event) {
+            const file = event.target.files;
+            if (!file) return;
+            if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+            try {
+                const text = await html5QrCode.scanFile(file, true);
+                simulateScan(text);
+            } catch { alert("No valid signature found in image."); switchScreen('home'); }
+        }
+
+        async function simulateScan(medId) {
+            switchScreen('results');
+            const content = document.getElementById('results-content');
+            content.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-28 animate-slide-up">
+                    <div class="relative mb-8">
+                        <div class="absolute inset-0 bg-cyan-400 blur-3xl opacity-30 animate-pulse"></div>
+                        <i class="fas fa-fingerprint text-6xl text-cyan-500 relative z-10"></i>
+                    </div>
+                    <p class="font-black text-slate-800 uppercase tracking-[0.3em] text-[10px]">Verifying Ledger Hash</p>
+                </div>`;
+
+            try {
+                const response = await fetch(`/api/scan/${medId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    content.innerHTML = `
+                        <div class="glass-card bg-indigo-50 border-indigo-100 p-10 rounded-[48px] text-center shadow-2xl animate-slide-up">
+                            <div class="w-24 h-24 bg-white rounded-[32px] flex items-center justify-center mx-auto mb-8 shadow-inner border border-indigo-50">
+                                <i class="fas fa-shield-slash text-4xl text-indigo-400"></i>
+                            </div>
+                            <h3 class="text-slate-900 font-black text-2xl mb-2 tracking-tighter">SECURITY BREACH</h3>
+                            <p class="text-slate-500 text-xs font-bold uppercase tracking-widest leading-relaxed">${data.message || 'Counterfeit origin detected'}</p>
+                        </div>`;
+                } else {
+                    let traceHtml = `<div class="mt-8 mb-4 border-l-2 border-blue-200 ml-4 pl-6 relative space-y-6">`;
+                    data.trace.forEach((block, idx) => {
+                        traceHtml += `
+                            <div class="relative animate-slide-up" style="animation-delay: ${0.2 + (idx * 0.1)}s">
+                                <div class="absolute w-5 h-5 bg-cyan-500 border-4 border-white rounded-full -left-[46px] top-1 shadow-lg shadow-cyan-100"></div>
+                                <div class="glass-card bg-white/50 border-white p-6 rounded-[32px] shadow-sm">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <h5 class="font-black text-slate-800 text-sm tracking-tight uppercase">${block.action}</h5>
+                                        <span class="text-[9px] text-slate-400 font-black">${block.date}</span>
+                                    </div>
+                                    <p class="text-slate-500 text-[10px] mb-4 font-bold flex items-center gap-2 tracking-tight"><i class="fas fa-location-dot text-cyan-400 text-[9px]"></i>${block.location}</p>
+                                    <div class="bg-white/60 p-4 rounded-2xl text-[8px] font-mono text-slate-400 break-all border border-white/80">
+                                        <p class="leading-relaxed"><strong class="text-slate-500 uppercase font-black">Hash:</strong> ${block.hash.substring(0, 48)}...</p>
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+                    traceHtml += `</div>`;
+
+                    content.innerHTML = `
+                        <div class="glass-card bg-white/70 border-white p-7 rounded-[40px] mb-8 shadow-2xl shadow-cyan-100/30 relative overflow-hidden animate-slide-up">
+                            <div class="flex items-start gap-6 mb-8 relative z-10">
+                                <div class="w-16 h-16 bg-cyan-500/10 border border-cyan-500/20 rounded-3xl flex items-center justify-center text-cyan-500 shrink-0 shadow-inner">
+                                    <i class="fas fa-badge-check text-2xl"></i>
+                                </div>
+                                <div class="pt-1">
+                                    <h3 class="text-cyan-500 font-black text-[9px] tracking-[0.3em] uppercase mb-2">Authenticated Batch</h3>
+                                    <p class="text-slate-900 font-black text-2xl tracking-tighter uppercase leading-none">${data.medicine.name}</p>
+                                    <p class="text-slate-400 text-[10px] font-bold mt-3 tracking-wide uppercase"><i class="fas fa-industry text-[9px] mr-2"></i> ${data.medicine.manufacturer}</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-5 relative z-10">
+                                <div class="glass-btn bg-white border-white/80 p-5 rounded-[28px]">
+                                    <span class="block text-[8px] text-slate-400 font-black uppercase tracking-widest mb-2">Usage</span>
+                                    <span class="text-xs font-black text-slate-700 leading-tight">${data.medicine.med_use || 'Universal'}</span>
+                                </div>
+                                <div class="glass-btn bg-white border-white/80 p-5 rounded-[28px]">
+                                    <span class="block text-[8px] text-slate-400 font-black uppercase tracking-widest mb-2">Expires</span>
+                                    <span class="text-xs font-black text-indigo-500 uppercase tracking-tighter">${data.medicine.expiry}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4 mb-8 px-2 animate-slide-up" style="animation-delay: 0.1s;">
+                            <h4 class="text-slate-800 font-black text-[10px] tracking-[0.4em] uppercase opacity-40">Blockchain Trace</h4>
+                            <div class="h-px flex-1 bg-slate-200"></div>
+                        </div>
+                        ${traceHtml}
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `
+                <div class="glass-card border-slate-200 p-10 rounded-[48px] text-center shadow-xl animate-slide-up">
+                    <p class="text-indigo-400 text-xs font-black uppercase tracking-widest">Network Error</p>
+                </div>`;
+            }
+        }
+
+        function verifySerialNumber() {
+            const inputField = document.getElementById('serialInput');
+            const serialNo = inputField.value.trim();
+            if (serialNo) simulateScan(serialNo);
+            inputField.value = ""; 
+        }
+
+        function toggleChat() {
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.classList.toggle('hidden');
+        }
+
+        function handleChatEnter(e) { if (e.key === 'Enter') sendChatMessage(); }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chatBox = document.getElementById('chat-messages');
+            chatBox.innerHTML += `<div class="self-end bg-slate-900 text-white px-6 py-4 rounded-[32px] rounded-tr-sm text-xs font-black max-w-[85%] shadow-xl tracking-tight">${message}</div>`;
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const typingId = 'typing-' + Date.now();
+            chatBox.innerHTML += `<div id="${typingId}" class="self-start glass-btn bg-white/90 text-slate-400 px-6 py-4 rounded-[32px] rounded-tl-sm text-xs max-w-[85%] animate-pulse font-bold tracking-tight">Syncing response...</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+                const data = await response.json();
+                document.getElementById(typingId).remove();
+                chatBox.innerHTML += `<div class="self-start glass-btn bg-white/95 border-white text-slate-700 px-6 py-4 rounded-[32px] rounded-tl-sm text-xs leading-relaxed max-w-[85%] font-bold shadow-sm tracking-tight">${data.reply || 'Interface timeout.'}</div>`;
+            } catch (error) {
+                document.getElementById(typingId).remove();
+                chatBox.innerHTML += `<div class="self-start bg-indigo-50 text-indigo-500 px-6 py-4 rounded-[32px] rounded-tl-sm text-xs font-black uppercase tracking-widest">Connection Lost</div>`;
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function loadAllMedicines() {
+            const list = document.getElementById('medicineList');
+            try {
+                const res = await fetch('/api/medicines');
+                const data = await res.json();
+                if (data.success) {
+                    list.innerHTML = data.medicines.map(m => `
+                        <div onclick="simulateScan('${m.barcode}')" class="med-item glass-btn border-white/60 p-6 rounded-[28px] flex items-center justify-between cursor-pointer text-slate-700 transition-all hover:translate-x-2">
+                            <div class="flex items-center gap-4">
+                                <div class="w-2 h-2 rounded-full bg-cyan-400"></div>
+                                <div>
+                                    <span class="block font-black text-sm tracking-tight uppercase">${m.name}</span>
+                                    <span class="block text-[9px] text-slate-400 font-bold tracking-wider mt-1">${m.barcode}</span>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
+                        </div>`).join('');
+                }
+            } catch {}
+        }
+
+        function filterMedicines() {
+            let input = document.getElementById('searchInput').value.toUpperCase();
+            let items = document.querySelectorAll('.med-item');
+            items.forEach(item => {
+                let text = item.textContent || item.innerText;
+                item.style.display = text.toUpperCase().indexOf(input) > -1 ? "flex" : "none";
+            });
+        }
+        
+        function toggleFaq(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById(`icon-${id}`);
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                icon.style.transform = "rotate(0deg)";
+            } else {
+                content.classList.add('open');
+                icon.style.transform = "rotate(180deg)";
+            }
+        }
+    </script>
+</body>
+</html>
